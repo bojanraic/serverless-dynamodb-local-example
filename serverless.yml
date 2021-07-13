@@ -1,0 +1,74 @@
+service: ddb-local-demo
+
+frameworkVersion: '2'
+
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: local
+  lambdaHashingVersion: '20201221'
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+
+  DB_PREFIX: ${file(./config.yml):${self:custom.stage}.DB_PREFIX}
+  dynamodb:
+    stages:
+      - local
+    start:
+      port: 8000
+      inMemory: true
+      migrate: false
+      seed: false
+    seed:
+      domain:
+        sources:
+          - table: ${self:custom.DB_PREFIX}-todos
+            sources: [./localdb/migrations/todo-seed.json]
+
+
+functions:
+  getAllTodos:
+    handler: handler.getAllTodos
+    events:
+      - http:
+          method: GET
+          path: todos/getAll
+          cors: true
+
+  createTodo:
+    handler: handler.createTodo
+    events:
+      - http:
+          method: POST
+          path: todos
+          cors: true
+
+  updateTodo:
+    handler: handler.updateTodo
+    events:
+      - http:
+          method: PUT
+          path: todos/update
+          cors: true
+
+  updateTodoStatus:
+    handler: handler.updateTodoStatus
+    events:
+      - http:
+          method: PUT
+          path: todos/status
+          cors: true
+  
+  deleteTodo:
+    handler: handler.deleteTodo
+    events:
+      - http:
+          method: DELETE
+          path: todos/delete/{id}
+          cors: true

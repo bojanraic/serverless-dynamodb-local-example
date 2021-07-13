@@ -1,0 +1,2 @@
+local:
+  DB_PREFIX: local
