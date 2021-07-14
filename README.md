@@ -4,7 +4,7 @@ This example project is based on the todo API found [here](https://github.com/99
 
 ### Choices
 
-For this example, we do not define DynamoDB tables in `serverless.yml`'s `Resources` section. Rather, we invoke a custom JS ([`localdbinit.js`](localdb/migrations/localdbinit.js)) to create the necessary table(s) in local DynamoDB. 
+For this example, we do not define DynamoDB tables in `serverless.yml`'s `Resources` section. Rather, we assume it is handled by Ops Team outside of Serverless Project for the real environments. Hence, we invoke a custom JS ([`localdbinit.js`](localdb/migrations/localdbinit.js)) to create the necessary table(s) in local DynamoDB. 
 
 Furthermore, we make use of NPM scripts to streamline local development actions so all we need to do is run `npm run offline`, 
 which will: 
