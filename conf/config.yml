@@ -1,0 +1,8 @@
+local:
+  DB_PREFIX: local
+dev: 
+  DB_PREFIX: dev
+stage:
+  DB_PREFIX: stage
+prod: 
+  DB_PREFIX: prod

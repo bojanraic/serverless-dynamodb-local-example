@@ -1,40 +1,26 @@
-service: ddb-local-demo
+service: todos-demo
 
 frameworkVersion: '2'
-
+variablesResolutionMode: 20210326
 
 provider:
   name: aws
   runtime: nodejs14.x
-  stage: local
+  stage: ${opt:stage, 'dev'}
   lambdaHashingVersion: '20201221'
 
-plugins:
-  - serverless-dynamodb-local
-  - serverless-offline
-
 custom:
-  stage: ${opt:stage, self:provider.stage}
+  DB_PREFIX: ${file(./conf/config.yml):${self:provider.stage}.DB_PREFIX}
 
-  DB_PREFIX: ${file(./config.yml):${self:custom.stage}.DB_PREFIX}
-  dynamodb:
-    stages:
-      - local
-    start:
-      port: 8000
-      inMemory: true
-      migrate: false
-      seed: false
-    seed:
-      domain:
-        sources:
-          - table: ${self:custom.DB_PREFIX}-todos
-            sources: [./localdb/migrations/todo-seed.json]
-
+package:
+  patterns:
+    - '!./**'
+    - 'src/**'
+    - 'node_modules/**'
 
 functions:
   getAllTodos:
-    handler: handler.getAllTodos
+    handler: src/handler.getAllTodos
     events:
       - http:
           method: GET
@@ -42,7 +28,7 @@ functions:
           cors: true
 
   createTodo:
-    handler: handler.createTodo
+    handler: src/handler.createTodo
     events:
       - http:
           method: POST
@@ -50,7 +36,7 @@ functions:
           cors: true
 
   updateTodo:
-    handler: handler.updateTodo
+    handler: src/handler.updateTodo
     events:
       - http:
           method: PUT
@@ -58,7 +44,7 @@ functions:
           cors: true
 
   updateTodoStatus:
-    handler: handler.updateTodoStatus
+    handler: src/handler.updateTodoStatus
     events:
       - http:
           method: PUT
@@ -66,7 +52,7 @@ functions:
           cors: true
   
   deleteTodo:
-    handler: handler.deleteTodo
+    handler: src/handler.deleteTodo
     events:
       - http:
           method: DELETE

@@ -4,63 +4,41 @@ This example project is based on the todo API found [here](https://github.com/99
 
 ### Choices
 
-For this example, we do not define DynamoDB tables in `serverless.yml`'s `Resources` section. Rather, we assume it is handled by Ops Team outside of Serverless Project for the real environments. Hence, we invoke a custom JS ([`localdbinit.js`](localdb/migrations/localdbinit.js)) to create the necessary table(s) in local DynamoDB. 
+For this example, we do not define DynamoDB table(s) or IAM-relalted details in `serverless.yml`. Rather, we assume resources and permissions are handled by the (Dev)Ops Team outside of Serverless Project for the real environments. Hence, for local/offline scenario, we use `sls-local.yml` configuration file and include all plugins and settings needed for local/offline environment, including running DynamoDB Local, complete with table creation, data seeding and migrations. 
 
-Furthermore, we make use of NPM scripts to streamline local development actions so all we need to do is run `npm run offline`, 
+Furthermore, we make use of NPM scripts to streamline local development actions so all we need to do is run `npm run local`, 
 which will: 
 - download and install DynamoDBLocal, if needed
 - start the local DynamoDB instance in-memory
-- create DynamoDB table(s)
-- seed the data
-- run migrations
-- finally, run `sls offline` to start our offline local environment for todo's
+- create DynamoDB table (from `localdb/todo.yml`)
+- seed the data (from `localdb/todo-seed.json`)
+- run migrations, if any
+- finally, run `sls offline -c sls-local.yml` to start our offline local environment for todo's API.
 
 ### Sample Output
 
 ``` bash
- npm run offline
+  npm run local
 
-> offline
-> npm run start-local-ddb && sleep 2 && npm run init-local-ddb && sleep 2 && sls offline
+> local
+> npm run install-local-ddb && sls offline start -c sls-local.yml
 
 
-> start-local-ddb
-> sls dynamodb install && sls dynamodb start &
+> install-local-ddb
+> sls dynamodb install -c sls-local.yml
 
 Dynamodb is already installed on path!
-
-> init-local-ddb
-> node localdb/migrations/localdbinit.js && sls dynamodb seed && sls dynamodb migrate
-
 Dynamodb Local Started, Visit: http://localhost:8000/shell
-{
-  TableDescription: {
-    AttributeDefinitions: [ [Object] ],
-    TableName: 'local-todos',
-    KeySchema: [ [Object] ],
-    TableStatus: 'ACTIVE',
-    CreationDateTime: 2021-07-13T14:27:19.944Z,
-    ProvisionedThroughput: {
-      LastIncreaseDateTime: 1970-01-01T00:00:00.000Z,
-      LastDecreaseDateTime: 1970-01-01T00:00:00.000Z,
-      NumberOfDecreasesToday: 0,
-      ReadCapacityUnits: 1,
-      WriteCapacityUnits: 1
-    },
-    TableSizeBytes: 0,
-    ItemCount: 0,
-    TableArn: 'arn:aws:dynamodb:ddblocal:000000000000:table/local-todos'
-  }
-}
+Serverless: DynamoDB - created table local-todos
 Seed running complete for table: local-todos
 offline: Starting Offline: local/us-east-1.
 offline: Offline [http for lambda] listening on http://localhost:3002
 offline: Function names exposed for local invocation by aws-sdk:
-           * getAllTodos: ddb-local-demo-local-getAllTodos
-           * createTodo: ddb-local-demo-local-createTodo
-           * updateTodo: ddb-local-demo-local-updateTodo
-           * updateTodoStatus: ddb-local-demo-local-updateTodoStatus
-           * deleteTodo: ddb-local-demo-local-deleteTodo
+           * getAllTodos: todos-demo-local-getAllTodos
+           * createTodo: todos-demo-local-createTodo
+           * updateTodo: todos-demo-local-updateTodo
+           * updateTodoStatus: todos-demo-local-updateTodoStatus
+           * deleteTodo: todos-demo-local-deleteTodo
 
    ┌──────────────────────────────────────────────────────────────────────────────────────┐
    │                                                                                      │
@@ -82,24 +60,24 @@ offline:
 offline: Enter "rp" to replay the last request
 
 ```
-We can now try to get all todo's using `curl` and `jq` for nice formatting:
+We can now try to get all todo's by using `curl` and `jq` for nice formatting:
 ``` bash
 curl -s localhost:3000/local/todos/getAll | jq
 {
   "result": {
     "Items": [
       {
-        "id": "43fca9c6-91f4-4593-9e5c-fac85beab5a7",
+        "id": "1",
         "task": "Eat breakfast",
         "isCompleted": true
       },
       {
-        "id": "c796d733-9779-45c5-a130-20fd1fd0b652",
+        "id": "2",
         "task": "Wake up",
         "isCompleted": true
       },
       {
-        "id": "42828c93-afb5-4761-ba55-becfda40b11b",
+        "id": "3",
         "task": "Go to office",
         "isCompleted": false
       }
@@ -108,4 +86,72 @@ curl -s localhost:3000/local/todos/getAll | jq
     "ScannedCount": 3
   }
 }
+```
+### Running on AWS 
+
+To run this example on AWS, we need to: 
+- create a DynamoDB Table as defined in `localdb/todo.yml`
+- populate the table with some data item(s), for example: 
+```javascript 
+{
+  "id": "123",
+  "isCompleted": false,
+  "task": "Push the code"
+}
+  ```
+- give IAM permissions to the DynamoDB table for the role called `todos-demo-<stage>-<region>-lambdaRole`, or alternatively, specify roles and granular permissions with each function declared
+
+After that, we can deploy as 
+``` bash 
+sls deploy --verbose 
+
+Serverless: Running "serverless" installed locally (in service node_modules)
+Serverless: Packaging service...
+Serverless: Excluding development dependencies...
+......
+Output clipped
+......
+Service Information
+service: todos-demo
+stage: dev
+region: us-east-1
+stack: todos-demo-dev
+resources: 41
+api keys:
+  None
+endpoints:
+  GET - https://xxxyyyzzz.execute-api.us-east-1.amazonaws.com/dev/todos/getAll
+  POST - https://xxxyyyzzz.execute-api.us-east-1.amazonaws.com/dev/todos
+  PUT - https://xxxyyyzzz.execute-api.us-east-1.amazonaws.com/dev/todos/update
+  PUT - https://xxxyyyzzz.execute-api.us-east-1.amazonaws.com/dev/todos/status
+  DELETE - https://xxxyyyzzz.execute-api.us-east-1.amazonaws.com/dev/todos/delete/{id}
+functions:
+  getAllTodos: todos-demo-dev-getAllTodos
+  createTodo: todos-demo-dev-createTodo
+  updateTodo: todos-demo-dev-updateTodo
+  updateTodoStatus: todos-demo-dev-updateTodoStatus
+  deleteTodo: todos-demo-dev-deleteTodo
+......
+Output clipped
+......
+
+```
+
+Finally, we can send a GET request to call the `getAllTodos` function directly on AWS: 
+
+``` bash
+curl -s https://xxxyyyzzz.execute-api.us-east-1.amazonaws.com/dev/todos/getAll | jq
+{
+  "result": {
+    "Items": [
+      {
+        "task": "Push the code",
+        "id": "123",
+        "isCompleted": false
+      }
+    ],
+    "Count": 1,
+    "ScannedCount": 1
+  }
+} 
 ```

@@ -1,0 +1,39 @@
+service: todos-demo
+
+frameworkVersion: '2'
+variablesResolutionMode: 20210326
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: local
+  lambdaHashingVersion: '20201221'
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  
+  DB_PREFIX: ${file(./conf/config.yml):${self:custom.stage}.DB_PREFIX}
+
+  dynamodb:
+    stages:
+      - local
+    start:
+      port: 8000
+      inMemory: false
+      migrate: true
+      seed: true
+    seed:
+      domain:
+        sources:
+          - table: ${self:custom.DB_PREFIX}-todos
+            sources: [./localdb/todo-seed.json]
+
+functions:
+  ${file(./serverless.yml):functions}
+
+resources:
+  Resources: ${file(localdb/todo.yml)}

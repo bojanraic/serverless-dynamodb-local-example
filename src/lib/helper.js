@@ -1,7 +1,7 @@
 "use strict";
 
 var Promise = require("bluebird"),
-  db = require("../database/dynamodb");
+  db = require("./db");
 
 const DB_PREFIX = process.env.IS_OFFLINE ? "local" : process.env.DB_PREFIX;
 

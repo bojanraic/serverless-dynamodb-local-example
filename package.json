@@ -1,14 +1,13 @@
 {
   "devDependencies": {
-    "serverless-dynamodb-local": "0.2.40",
-    "serverless-offline": "7.0.0"
+    "serverless-dynamodb-local": "^0.2.40",
+    "serverless-offline": "^8.0.0"
   },
   "dependencies": {
     "bluebird": "^3.7.2"
   },
   "scripts": {
-    "start-local-ddb": "sls dynamodb install && sls dynamodb start &",
-    "init-local-ddb": "node localdb/migrations/localdbinit.js && sls dynamodb seed && sls dynamodb migrate",
-    "offline": "npm run start-local-ddb && sleep 2 && npm run init-local-ddb && sleep 2 && sls offline"
+    "install-local-ddb": "sls dynamodb install -c sls-local.yml",
+    "local": "npm run install-local-ddb && sls offline start -c sls-local.yml"
   }
 }
